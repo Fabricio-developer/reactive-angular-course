@@ -1,60 +1,64 @@
-import {Component, OnInit} from '@angular/core';
-import {Course, sortCoursesBySeqNo} from '../model/course';
-import {interval, noop, Observable, of, throwError, timer} from 'rxjs';
-import {catchError, delay, delayWhen, filter, finalize, map, retryWhen, shareReplay, tap} from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
-import {MatDialog, MatDialogConfig} from '@angular/material/dialog';
-import {CourseDialogComponent} from '../course-dialog/course-dialog.component';
-
+import { Component, Inject, OnInit } from "@angular/core";
+import { Course, sortCoursesBySeqNo } from "../model/course";
+import { Observable, throwError } from "rxjs";
+import { catchError, finalize, map, tap } from "rxjs/operators";
+import { CoursesService } from "../services/courses.service";
+import { LoadingService } from "../loading/loading.service";
+import { MessagesService } from "../messages/messages.service";
+import { CoursesStore } from "../services/course.store";
 
 @Component({
-  selector: 'home',
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.css']
+  selector: "home",
+  templateUrl: "./home.component.html",
+  styleUrls: ["./home.component.css"],
 })
 export class HomeComponent implements OnInit {
+  beginnerCourses$: Observable<Course[]>;
 
-  beginnerCourses: Course[];
+  advancedCourses$: Observable<Course[]>;
 
-  advancedCourses: Course[];
-
-
-  constructor(private http: HttpClient, private dialog: MatDialog) {
-
-  }
+  constructor(
+    private coursesStore: CoursesStore
+  ) {}
 
   ngOnInit() {
-
-    this.http.get('/api/courses')
-      .subscribe(
-        res => {
-
-          const courses: Course[] = res["payload"].sort(sortCoursesBySeqNo);
-
-          this.beginnerCourses = courses.filter(course => course.category == "BEGINNER");
-
-          this.advancedCourses = courses.filter(course => course.category == "ADVANCED");
-
-        });
-
+    this.reloadCourses();
+    // a complete example of retrying failed requests
+    // courses$.pipe(
+    //   tap(courses => console.log('Received courses:', courses)),
+    //   retryWhen(err => interval(1000).pipe(
+    //     take(5),
+    //     map(() => err),
+    //     tap(err => console.error('Error occurred:', err)),
+    //     delay(1000),
+    //     tap(() => console.log('Retrying...')),
+    //     finalize(() => console.log('Retrying completed'))
+    //   )),
+    //   catchError(err => throwError(err)),
+    //   map(courses => courses.sort(sortCoursesBySeqNo)),
+    //   shareReplay(1)
+    // ).subscribe(courses => {
+    //   this.beginnerCourses = courses.filter(c => c.category === 'BEGINNER');
+    //   this.advancedCourses = courses.filter(c => c.category === 'ADVANCED');
+    // });
   }
 
-  editCourse(course: Course) {
+  reloadCourses() {
+    // this.loadingService.loadingOn();
 
-    const dialogConfig = new MatDialogConfig();
+    // const courses$ = this.coursesService.loadAllCourses().pipe(
+    //   map((courses) => courses.sort(sortCoursesBySeqNo)),
+    //   catchError((err) => {
+    //     const  message = "Could not load courses";
+    //     this.messagesService.showErrors(message);
+    //     console.log("🚀 ~ HomeComponent ~ catchError ~ message, err:", message, err)
+    //     return throwError(err);
 
-    dialogConfig.disableClose = true;
-    dialogConfig.autoFocus = true;
-    dialogConfig.width = "400px";
+    //   })
+    // );
 
-    dialogConfig.data = course;
+    this.beginnerCourses$ = this.coursesStore.filterByCategory("BEGINNER");
 
-    const dialogRef = this.dialog.open(CourseDialogComponent, dialogConfig);
-
+    this.advancedCourses$ = this.coursesStore.filterByCategory("ADVANCED");
   }
-
 }
-
-
-
-

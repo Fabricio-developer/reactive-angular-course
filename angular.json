@@ -4,7 +4,7 @@
   "newProjectRoot": "projects",
   "projects": {
     "reactive-angular-course": {
-      "root": "",
+      "root": "./",
       "sourceRoot": "src",
       "projectType": "application",
       "architect": {
